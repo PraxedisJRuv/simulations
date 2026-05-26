@@ -1,11 +1,14 @@
 #include<iostream>
 #include<vector>
 #include <cmath>
+#include<random>
 
 class PriceContainer{
-    std::vector<double> close;
+    
     public:
-
+    
+    std::vector<double> close;
+    
     PriceContainer(std::vector<double> prices){
         close=prices;
     }
@@ -48,3 +51,41 @@ class PriceContainer{
         return vreturns;
     }
 };
+
+
+std::vector<PriceContainer> simulateBGM(PriceContainer& s, double mu, double vola, int T, double M, double n){
+    std::vector<double> vec(n+1,0);
+    std::vector<PriceContainer> paths(M,PriceContainer(vec));
+    std::mt19937 rng(777);
+    std::normal_distribution<double> Z(0,1);
+    double delta=T/n;
+    double multiplier=0;
+    int last=(s.close).size();
+
+    for (double i=0; i<M; i++){
+        paths[i].close[0]=s.close[last-1];
+        std::cout<<paths[i].close[0]<<"\t";
+    }
+    std::cout<<"\n";
+
+    for (double j=1; j<n; j++){
+
+        for (double i=1; i<M; i++){
+            multiplier =std::exp(mu*delta+vola*sqrt(delta)*Z(rng));
+            paths[i].close[j]=((paths[i].close[j-1])*multiplier);
+            std::cout<<paths[i].close[j]<<"\t";
+        }
+        std::cout<<"\n";
+    }
+
+    return paths;
+}
+
+
+std::mt19937 rng(777);
+
+int main(){
+    PriceContainer test({10,10});
+    std::vector<PriceContainer> paths=simulateBGM(test,0.1,0.3,1,15,100);
+    return 0;
+}

@@ -39,8 +39,10 @@ struct Population{
             s.S=s.S+delta*slope.S;
             s.I=s.I+delta*slope.I;
             s.R=s.R+delta*slope.R;
-            std::cout << s;
+            
             t=t+delta;
+            std::cout<<"At t ="<<t<<"\t";
+            std::cout << s; 
         }
         std::cout << "Approximate solution at time = " << T_end << " is " << s << "\n";
         return {s.S, s.I, s.R};
