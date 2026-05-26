@@ -1,25 +1,27 @@
 #include <iostream>
 #include <iomanip>
+#include <random>
+#include <cmath>
 
 struct Population{
     double S, I, R;
 
     Population(double s, double i, double r){
-        S=s;  // Susceptible
-        I=i; // Infected
-        R=r; // Recovered
+        S=s;  
+        I=i; 
+        R=r; 
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Population& p){
         os << "S =" << p.S
-           << " | R =" << p.R
            << " | I =" << p.I
+           << " | R =" << p.R
            << "\n";
 
         return os;
     }
     
-    Population deriv(Population& p, double N, double beta, double gamma ){
+    Population det_deriv(Population& p, double N, double beta, double gamma ){
             double new_infections=(beta*p.S*p.I)/N;
             double new_recoveries=(gamma*p.I);
 
@@ -35,7 +37,7 @@ struct Population{
         double t=0;
         std::cout<<std::fixed<<std::setprecision(4);
         while(t<T_end){
-            Population slope=deriv(s, N, beta, gamma);
+            Population slope=det_deriv(s, N, beta, gamma);
             s.S=s.S+delta*slope.S;
             s.I=s.I+delta*slope.I;
             s.R=s.R+delta*slope.R;
@@ -43,11 +45,35 @@ struct Population{
             t=t+delta;
             std::cout<<"At t ="<<t<<"\t";
             std::cout << s; 
+            }
+        std::cout << "Approximate solution at time = " << T_end << " is " << s << "\n";
+        return {s.S, s.I, s.R};
+        
+    }
+
+    Population rnd_change(double T_end, double delta, Population& s, double N, double beta, double gamma){
+        std::mt19937 rng(std::random_device{}());
+
+        double t=0;
+        while(t<T_end){
+            std::binomial_distribution<int> binom_I(s.S,1-std::exp((-beta*s.I*delta)/(N)));
+            std::binomial_distribution<int> binom_R(s.I,1-std::exp((-gamma*delta)));
+            int new_infected=binom_I(rng);
+            int new_recovered=binom_R(rng);
+
+            s.S=s.S-new_infected;
+            s.I=s.I+new_infected-new_recovered;
+            s.R=s.R+new_recovered;
+
+            t=t+delta;
+            std::cout<<"At t ="<<t<<"\t";
+            std::cout << s; 
         }
         std::cout << "Approximate solution at time = " << T_end << " is " << s << "\n";
         return {s.S, s.I, s.R};
+        
     }
-
+           
 };
 
 
@@ -55,8 +81,12 @@ int main(){
 
     Population pobla(50,2,1);
     std::cout<<pobla;
-    std::cout<<pobla.deriv(pobla,56,3,2);
-    pobla.change(10,0.5,pobla, 2, .02, .03);
-    std::cout<<pobla;
+    //std::cout<<pobla.det_deriv(pobla,56,3,2);
+    //pobla.change(10,0.5,pobla, 2, .02, .03, "det");
+    //std::cout<<pobla;
+    pobla.change(10,0.5, pobla, 2, 0.02, 0.03);
+    Population pobla2(50,2,1);
+    std::cout<<pobla2;
+    pobla2.rnd_change(10,0.01, pobla2, 2, 0.02, 0.03);
     return 0;
 }
