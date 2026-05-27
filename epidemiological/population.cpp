@@ -14,7 +14,7 @@ struct Population{
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Population& p){
-        os << "S =" << p.S
+        os << "|S =" << p.S
            << " | I =" << p.I
            << " | R =" << p.R
            << "\n";
@@ -70,7 +70,7 @@ struct Population{
 
             t=t+delta;
             std::cout<<"At t ="<<t<<"\t";
-            std::cout << s; 
+            std::cout <<s<<"\n"; 
         }
         std::cout << "Approximate solution at time = " << T_end << " is " << s << "\n";
         return {s.S, s.I, s.R};
@@ -80,14 +80,17 @@ struct Population{
     std::vector<double> get_sim_peaks(int M, Population& s, double T_end, double delta, double beta, double gamma){
         std::mt19937 rng(std::random_device{}());
         double peak =0;
+        double t=0;
         double N=s.S+s.I+s.R;
         std::vector<double> peaks(M,0);
         
         for (int i=0; i<M; i++){
-            double t=0;
             s.S=50;
             s.I=2;
             s.R=1;
+
+            peak=0;
+            t=0;
         while(t<T_end){
             std::binomial_distribution<int> binom_I(s.S,1-std::exp((-beta*s.I*delta)/(N)));
             std::binomial_distribution<int> binom_R(s.I,1-std::exp((-gamma*delta)));
@@ -99,38 +102,36 @@ struct Population{
             s.R=s.R+new_recovered;
 
             t=t+delta;
-            
             peak=std::max(peak,s.I);
-            std::cout << peak;
         }
-        peaks.push_back(peak);
-        peak=0;
+        peaks[i]=peak;
         }
         
         return peaks;
     }
+
+    
            
 };
 
-
+void print_peaks_p(std::vector<double>peaks){
+        std::sort(peaks.begin(),peaks.end());
+    int p5  = peaks[peaks.size()-1 * 0.05];
+    int p50 = peaks[peaks.size()-1 * 0.50];
+    int p95 = peaks[peaks.size()-1 * 0.95];
+    std::cout<<"\n"<<peaks[p5]<<"\t"<<peaks[p50]<<"\t"<<peaks[p95]<<"\t"<<peaks[peaks.size()-1];
+}
 int main(){
 
-    Population pobla(50,2,1);
-    std::cout<<pobla;
-    //std::cout<<pobla.det_deriv(pobla,56,3,2);
-    //pobla.change(10,0.5,pobla, 2, .02, .03, "det");
-    //std::cout<<pobla;
-    pobla.change(10,0.5, pobla, 0.2, 0.3);
     Population pobla2(50,2,1);
-    std::cout<<pobla2;
-    pobla2.rnd_change(10,0.5, pobla2, 0.2, 0.3);
+    //std::cout<<pobla2;
+    //pobla2.rnd_change(20,0.5, pobla2, 0.8, 0.3);
 
-    pobla2.S=50;
-    pobla2.I=2;
-    pobla2.R=1;
+    //pobla2.S=50;
+    //pobla2.I=2;
+    //pobla2.R=1;
     
-    pobla2.get_sim_peaks(100,pobla2,10,0.5,0.2,0.3);
-
-
+    std::vector<double> peaks=pobla2.get_sim_peaks(100,pobla2,10,0.5,0.8,0.3);
+    print_peaks_p(peaks);
     return 0;
 }
