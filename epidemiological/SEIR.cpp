@@ -77,19 +77,21 @@ struct Population{
 
         double t=0;
         while(t<T_end){
-            std::binomial_distribution<int> binom_SI(s.S,1-std::exp((-beta*s.I*delta)/(s.N)));
+            std::binomial_distribution<int> binom_SR(s.S,1-std::exp((-vax*delta)));
+            int new_vaxxed=binom_SR(rng);
+            
+            std::binomial_distribution<int> binom_SE(s.S-new_vaxxed,1-std::exp((-beta*s.I*delta)/(s.N)));
             std::binomial_distribution<int> binom_EI(s.E,1-std::exp((-sigma*delta)));
             std::binomial_distribution<int> binom_IR(s.I,1-std::exp((-gamma*delta)));
-            std::binomial_distribution<int> binom_SR(s.S,1-std::exp((-vax*delta)));
             
-            int new_S_infected=binom_SI(rng);
-            int new_E_infected=binom_EI(rng);
+            int new_exposed=binom_SE(rng);
+            int new_infected=binom_EI(rng);
             int new_recovered=binom_IR(rng);
-            int new_vaxxed=binom_SR(rng);
+            
 
-            s.S=s.S-new_S_infected-new_vaxxed;
-            s.E=s.E+new_S_infected-new_E_infected;
-            s.I=s.I+new_E_infected-new_recovered;
+            s.S=s.S-new_exposed-new_vaxxed;
+            s.E=s.E+new_exposed-new_infected;
+            s.I=s.I+new_infected-new_recovered;
             s.R=s.R+new_recovered+new_vaxxed;
 
             t=t+delta;
@@ -116,19 +118,22 @@ struct Population{
             peak=0;
             t=0;
         while(t<T_end){
-            std::binomial_distribution<int> binom_SI(s.S,1-std::exp((-beta*s.I*delta)/(s.N)));
+
+            std::binomial_distribution<int> binom_SR(s.S,1-std::exp((-vax*delta)));
+            int new_vaxxed=binom_SR(rng);
+            //the previous had to be done since both probabilities afre independent in the same population.
+            std::binomial_distribution<int> binom_SE(s.S-new_vaxxed,1-std::exp((-beta*s.I*delta)/(s.N)));
             std::binomial_distribution<int> binom_EI(s.E,1-std::exp((-sigma*delta)));
             std::binomial_distribution<int> binom_IR(s.I,1-std::exp((-gamma*delta)));
-            std::binomial_distribution<int> binom_SR(s.S,1-std::exp((-vax*delta)));
             
-            int new_S_infected=binom_SI(rng);
-            int new_E_infected=binom_EI(rng);
+            int new_exposed=binom_SE(rng);
+            int new_infected=binom_EI(rng);
             int new_recovered=binom_IR(rng);
-            int new_vaxxed=binom_SR(rng);
+            
 
-            s.S=s.S-new_S_infected-new_vaxxed;
-            s.E=s.E+new_S_infected-new_E_infected;
-            s.I=s.I+new_E_infected-new_recovered;
+            s.S=s.S-new_exposed-new_vaxxed;
+            s.E=s.E+new_exposed-new_infected;
+            s.I=s.I+new_infected-new_recovered;
             s.R=s.R+new_recovered+new_vaxxed;
 
             t=t+delta;
@@ -159,18 +164,18 @@ int main(){
 
     
     Population pobla(50,4,2,1);
-    pobla.change(10,.05,pobla,0.5,0.3,0.9,0.6);
+    pobla.change(10,.05,pobla,0.5,0.3,0.9,0.01);
 
     pobla.S=50;
     pobla.E=4;
     pobla.I=2;
     pobla.R=1;
 
-    pobla.rnd_change(10,.05,pobla,0.5,0.3,0.9,0.6);
+    pobla.rnd_change(10,.05,pobla,0.5,0.3,0.9,0.01);
 
 
     Population pobla2(50,4,2,1);
-    std::vector<double> peaks=pobla2.get_sim_peaks(100,pobla2,10,0.5,0.5,0.3,.9,.6);
+    std::vector<double> peaks=pobla2.get_sim_peaks(100,pobla2,10,0.5,0.5,0.3,.9,.01);
     print_peaks_p(peaks);
     return 0;
 }
