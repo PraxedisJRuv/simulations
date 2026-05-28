@@ -2,6 +2,7 @@
 #include<vector>
 #include <cmath>
 #include<random>
+#include <algorithm>
 
 class PriceContainer{
     
@@ -61,6 +62,10 @@ double normalCDF(double x){
     return 0.5*std::erfc(-x/std::sqrt(2.0));
 }
 
+double flat_yield(PriceContainer stock, float t, double r){
+    return stock.current_price()*std::exp(r*t);
+}
+
 std::vector<PriceContainer> simulateBGM(PriceContainer& s, double mu, double vola, int T, double M, double n){
     std::vector<double> vec(n+1,0);
     std::vector<PriceContainer> paths(M,PriceContainer(vec));
@@ -89,6 +94,34 @@ std::vector<PriceContainer> simulateBGM(PriceContainer& s, double mu, double vol
     return paths;
 }
 
+std::vector<PriceContainer> simulateBGM_rn(PriceContainer& s, double vola, int T, double M, double n, double r){
+    std::vector<double> vec(n+1,0);
+    std::vector<PriceContainer> paths(M,PriceContainer(vec));
+    std::mt19937 rng(std::random_device{}());
+    std::normal_distribution<double> Z(0,1);
+    double delta=T/n;
+    double multiplier=0;
+    int last=(s.close).size();
+
+    for (double i=0; i<M; i++){
+        paths[i].close[0]=s.close[last-1];
+        //std::cout<<paths[i].close[0]<<"\t";
+    }
+    //std::cout<<"\n";
+
+    for (double j=1; j<n; j++){
+
+        for (double i=1; i<M; i++){
+            multiplier =std::exp((r-0.5*vola*vola)*delta+vola*sqrt(delta)*Z(rng));
+            paths[i].close[j]=((paths[i].close[j-1])*multiplier);
+            //std::cout<<paths[i].close[j]<<"\t";
+        }
+        //std::cout<<"\n";
+    }
+
+    return paths;
+}
+
 /*
 mu is the expected rate of return. Percentage growth
 vola is the volatility of the asset The standard deviation of the asset's continuously compounded (log) returns
@@ -102,7 +135,7 @@ We're getting the current payoff for something sold at T
 */
 
 double mc_european_call_payoff(PriceContainer stock, double mu, double vola, int T, double M, double n, double k, double r){
-    std::vector<PriceContainer> paths=simulateBGM(stock, mu, vola, T, M, n);
+    std::vector<PriceContainer> paths=simulateBGM_rn(stock, vola, T, M, n, r);
     double sum=0;
     for (int i=0; i<M; i++){
         sum=sum+std::max(paths[i].close[n-1]-k,0.0);
@@ -119,13 +152,24 @@ double black_scholes(PriceContainer stock, double vola, int T, double k, double 
 
 }
 
+double VaR(std::vector<PriceContainer> paths, float percentile, int M, int n ){
+    std::vector<double> vvar(M,0);
+    for (int i=0; i<M; i++){
+        vvar[i]=(paths[i].close[n-1]);
+    }
+    std::sort(vvar.begin(),vvar.end());
+    
+    return vvar[M*percentile]-paths[0].close[0];
+}
+
 int main(){
     PriceContainer test({10,10});
     //std::vector<PriceContainer> paths=simulateBGM(test,0.1,0.3,1,15,100);
-    double mc_price=mc_european_call_payoff(test,0.1,0.3,1,100000,252,11.0,0.1);
+    double mc_price=mc_european_call_payoff(test,0.1,0.3,1,10000,252,11.0,0.1);
     double bs_price=black_scholes(test,0.3,1,11.0,0.1);
     double error =std::abs(mc_price -bs_price);
     double errorpercent=error/bs_price;
     std::cout<<mc_price<<"\t"<<bs_price<<"\t"<<error<<"\t"<<errorpercent<<"%";
+    std::cout<<"\n"<<VaR(simulateBGM(test,0.1,0.3,1,100,252),0.01,100,252);
     return 0;
 }
