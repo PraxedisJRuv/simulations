@@ -152,6 +152,26 @@ double black_scholes(PriceContainer stock, double vola, int T, double k, double 
 
 }
 
+    std::vector<double> cholesky_GBM_r(double w1, double w2, double rho, double mu1, double mu2, double vola1, double vola2, double M, int T, double n){
+    std::vector<double> vec(M,0);
+    std::mt19937 rng(std::random_device{}());
+    std::normal_distribution<double> Z(0,1);
+    double delta=T/n;
+
+    for (double i=0; i<M; i++){
+        double z1=Z(rng);
+        double z2=Z(rng);
+        double x1=z1;
+        double x2=rho*z1+std::sqrt(1-rho*rho)*z2;
+
+        double r1=mu1*delta+vola1*std::sqrt(delta)*x1;
+        double r2=mu2*delta+vola2*std::sqrt(delta)*x2;
+
+        vec[i]=w1*r1+w2*r2;
+    }
+    return vec;
+}
+
 double VaR(std::vector<PriceContainer> paths, float percentile, int M, int n ){
     std::vector<double> vvar(M,0);
     for (int i=0; i<M; i++){
@@ -162,8 +182,8 @@ double VaR(std::vector<PriceContainer> paths, float percentile, int M, int n ){
     return vvar[M*percentile]-paths[0].close[0];
 }
 
-int main(){
-    PriceContainer test({10,10});
+int test(){
+PriceContainer test({10,10});
     //std::vector<PriceContainer> paths=simulateBGM(test,0.1,0.3,1,15,100);
     double mc_price=mc_european_call_payoff(test,0.1,0.3,1,10000,252,11.0,0.1);
     double bs_price=black_scholes(test,0.3,1,11.0,0.1);
@@ -171,5 +191,30 @@ int main(){
     double errorpercent=error/bs_price;
     std::cout<<mc_price<<"\t"<<bs_price<<"\t"<<error<<"\t"<<errorpercent<<"%";
     std::cout<<"\n"<<VaR(simulateBGM(test,0.1,0.3,1,100,252),0.01,100,252);
+    return 0;
+}
+
+void cholesky_test(){
+    int M=10000;
+    std::vector <double> choleskyport=cholesky_GBM_r(0.6,0.4,1,0.07,0.03,0.20,0.05,M,1,252);
+    std::sort(choleskyport.begin(),choleskyport.end());
+    double var_1pct  = choleskyport[M * 0.01];
+    double var_5pct  = choleskyport[M * 0.05];
+
+    double mean = 0.0;
+    
+    for (double p : choleskyport) {
+        mean = mean + p;
+    }
+    mean /= M;
+
+    std::cout << "mean daily return : " << mean*100 << "%\n"
+              << "1% VaR \t\t: " << var_1pct*100 << "%\n"
+              << "5% VaR \t\t: " << var_5pct*100 << "%\n";
+
+}
+
+int main(){
+    cholesky_test();
     return 0;
 }
