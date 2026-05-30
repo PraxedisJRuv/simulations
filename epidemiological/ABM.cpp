@@ -37,7 +37,7 @@ struct Parameters{
 struct Agent{
     int id;
     State state;
-    int time_in_state;
+    float time_in_state;
 
     void transition(Agent& a, std::mt19937& rng, Parameters param, double delta,
         std::bernoulli_distribution advance_E, std::bernoulli_distribution advance_I){
@@ -46,30 +46,44 @@ struct Agent{
             case State::S:{
                 double prob=1.0-std::exp(-param.beta*delta);
                 if(std::bernoulli_distribution(prob)(rng)){
-                    a.state=State::E1;}
+                    a.state=State::E1;
+                    a.time_in_state=0;}
+                else{a.time_in_state=a.time_in_state+delta;}
                 }break;
             case State::E1:
                 if(advance_E(rng)){
                     a.state=State::E2;
-                }break;
+                    a.time_in_state=0;}
+                else{a.time_in_state=a.time_in_state+delta;}
+                break;
             case State::E2:
                 if(advance_E(rng)){
                     a.state=State::E3;
-                }break;
+                    a.time_in_state=0;}
+                else{a.time_in_state=a.time_in_state+delta;}
+                break;
             case State::E3:
                 if(advance_E(rng)){
                     a.state=State::I1;
-                }break;
+                    a.time_in_state=0;}
+                else{a.time_in_state=a.time_in_state+delta;}
+                break;
             case State::I1:
                 if(advance_I(rng)){
                     a.state=State::I2;
-                }break;
+                    a.time_in_state=0;}
+                else{a.time_in_state=a.time_in_state+delta;}
+                break;
             case State::I2:
                 if(advance_I(rng)){
                     a.state=State::R;
-                } break;
+                    a.time_in_state=0;} 
+                else{a.time_in_state=a.time_in_state+delta;}
+                break;
             
-            default: break;
+            default: 
+                a.time_in_state=a.time_in_state+delta;
+                break;
         }
 
     }
@@ -85,9 +99,53 @@ int count(std::vector<Agent> agents, State I){
     return count;
 }
 
+std::vector<std::vector<int>> conctacts_list(int N, float p, std::mt19937 rng){
+    std::vector<std::vector<int>> contacts(N);
+    std::bernoulli_distribution edge(p);
+    for (int i=0; i<N; i++){
+        for(int j=i+1; j<N; j++){
+            if(edge(rng)){
+                contacts[i].push_back(j);
+                contacts[j].push_back(i);
+            }
+        }
+    }
+    return contacts;
+}
+
+int degree(int i, std::vector<std::vector<int>>& c){
+return c[i].size();
+}
+
+void test_contact_list(){
+    int N=200;
+    float p=0.05;
+
+    double mean=0;
+    int max=0;
+    int min=300;
+
+    int aux=0;
+    int sum=0;
+
+    std::mt19937 rng(std::random_device{}());
+    std::vector<std::vector<int>> contacts=conctacts_list(N, p, rng);
+    for (int i=0; i<N; i++){
+        aux=degree(i,contacts);
+        sum=sum+aux;
+        if(aux>max){max=aux;}
+        if(aux<min){min=aux;}
+    }
+    mean=sum/N;
+
+    std::cout<<min<<"\t"<<max<<"\t"<<mean;
+    
+}
+
 void test_random_progress(){
     double delta=0.5;
-    Parameters param(0.5,0.2,0.1);
+    int N=200;
+    Parameters param(0.01,0.2,0.1);
     float rate_E=n_E*param.sigma;
     float rate_I=n_I*param.gamma;
     
@@ -96,21 +154,35 @@ void test_random_progress(){
     std::bernoulli_distribution advance_E(1-std::exp(-rate_E*delta));
     std::bernoulli_distribution advance_I(1-std::exp(-rate_I*delta));
 
-    std::vector<Agent> agents={{1,State::S,0},{2,State::I1,1},{3,State::I1,0}};
+    std::vector<Agent> agents;
+    for (int i=0; i<197; i++){
+        agents.push_back({i,State::S,0});
+    }
+    for (int i=197; i<200; i++){
+        agents.push_back({i,State::I1,0});
+    }
 
-    for (int j=0; j<10; j++){
+    for (int j=0; j<100; j++){
     for (int i=0; i<agents.size(); i++){
         agents[i].transition(agents[i], rng, param, delta, advance_E, advance_I);
-        std::cout<<agents[i].state<<"\t";
     }
-        std::cout<<j<<"\n";
+   
+        std::cout<<"S: "<<count(agents,State::S)
+                 <<"\t E1:"<<count(agents,State::E1)
+                 <<"\t E2:"<<count(agents,State::E2)
+                 <<"\t E3:"<<count(agents,State::E3)
+                 <<"\t I1:"<<count(agents,State::I1)
+                 <<"\t I2:"<<count(agents,State::I2)
+                 <<"\t R:"<<count(agents,State::R)
+                 <<"\t";
+        std::cout<<j<<"\n"; 
+
     }
-
-
 }
 
 int main(){
     //Agent ej1={1,State::S,0};
-    test_random_progress();
+    //test_random_progress();
+    test_contact_list();
     return 0;
 }
