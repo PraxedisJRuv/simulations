@@ -2,7 +2,7 @@
 #include <vector>
 #include <random>
 #include <cmath>
-
+#include<SFML/Graphics.hpp>
 
 /*
 simga is the incubation rate
@@ -90,11 +90,11 @@ struct Agent{
 };
 
 
-int count(std::vector<Agent> agents, State I){
-    int count =0;
-    for (int i=0; i<agents.size(); i++){
-        if (agents[i].state==I){
-            count=count+1;
+int count(const std::vector<Agent>& agents, State I){
+    int count = 0;
+    for (int i = 0; i < static_cast<int>(agents.size()); i++){
+        if (agents[i].state == I){
+            count += 1;
         }
     }
     return count;
@@ -115,72 +115,86 @@ std::vector<std::vector<int>> conctacts_list(int N, float p, std::mt19937 rng){
 }
 
 int degree(int i, std::vector<std::vector<int>>& c){
-return c[i].size();
+    return c[i].size();
 }
 
-int neighbors_in_state(int i, std::vector<std::vector<int>> &c, std::vector<Agent> &a, State I){
-    int count=0;
-    for (int j=0; j<c[i].size(); j++){
-        if(a[c[i][j]].state==I){
-            count = count+1;
+inline bool isInfectious(State s) {
+    return s == State::I1 || s == State::I2;
+}
+
+int infectious_neighbors(int i, const std::vector<std::vector<int>>& contacts, const std::vector<Agent>& agents){
+    int count = 0;
+    for (int neighbor : contacts[i]){
+        if (isInfectious(agents[neighbor].state)){
+            count += 1;
         }
     }
     return count;
 }
 
- void transition_with_network(int i, std::vector<Agent> &a, Agent & agent, std::vector<std::vector<int>> &c, 
+ void transition_with_network(int i, std::vector<Agent> &a, Agent & agent, const std::vector<std::vector<int>> &c, 
                                 std::mt19937& rng, const Parameters &param, const double &delta,
                                 std::bernoulli_distribution advance_E, std::bernoulli_distribution advance_I){
         
         switch(agent.state){
-            case State::S:{
+            case State::S: {
                 double prob=1.0-std::exp(-param.beta*delta);
-                int exposure= neighbors_in_state(i, c, a, State::I1);
-               
+                int exposure = infectious_neighbors(i, c, a);
                 for (int j=0; j<exposure; j++){
                     if(std::bernoulli_distribution(prob)(rng)){
-                    agent.state=State::E1;
-                    agent.time_in_state=0;
-                    break;}
+                        agent.state = State::E1;
+                        agent.time_in_state = 0;
+                        break;
+                    }
                 }
-                if(agent.state!=State::E1){agent.time_in_state=agent.time_in_state+delta;}
-                }break;
+                if (agent.state != State::E1){
+                    agent.time_in_state = agent.time_in_state + delta;
+                }
+            } break;
             case State::E1:
-                if(advance_E(rng)){
-                    agent.state=State::E2;
-                    agent.time_in_state=0;}
-                else{agent.time_in_state=agent.time_in_state+delta;}
+                if (advance_E(rng)){
+                    agent.state = State::E2;
+                    agent.time_in_state = 0;
+                } else {
+                    agent.time_in_state = agent.time_in_state + delta;
+                }
                 break;
             case State::E2:
-                if(advance_E(rng)){
-                    agent.state=State::E3;
-                    agent.time_in_state=0;}
-                else{agent.time_in_state=agent.time_in_state+delta;}
+                if (advance_E(rng)){
+                    agent.state = State::E3;
+                    agent.time_in_state = 0;
+                } else {
+                    agent.time_in_state = agent.time_in_state + delta;
+                }
                 break;
             case State::E3:
-                if(advance_E(rng)){
-                    agent.state=State::I1;
-                    agent.time_in_state=0;}
-                else{agent.time_in_state=agent.time_in_state+delta;}
+                if (advance_E(rng)){
+                    agent.state = State::I1;
+                    agent.time_in_state = 0;
+                } else {
+                    agent.time_in_state = agent.time_in_state + delta;
+                }
                 break;
             case State::I1:
-                if(advance_I(rng)){
-                    agent.state=State::I2;
-                    agent.time_in_state=0;}
-                else{agent.time_in_state=agent.time_in_state+delta;}
+                if (advance_I(rng)){
+                    agent.state = State::I2;
+                    agent.time_in_state = 0;
+                } else {
+                    agent.time_in_state = agent.time_in_state + delta;
+                }
                 break;
             case State::I2:
-                if(advance_I(rng)){
-                    agent.state=State::R;
-                    agent.time_in_state=0;} 
-                else{agent.time_in_state=agent.time_in_state+delta;}
+                if (advance_I(rng)){
+                    agent.state = State::R;
+                    agent.time_in_state = 0;
+                } else {
+                    agent.time_in_state = agent.time_in_state + delta;
+                }
                 break;
-            
-            default: 
-                agent.time_in_state=agent.time_in_state+delta;
+            default:
+                agent.time_in_state = agent.time_in_state + delta;
                 break;
         }
-
     }
 
 std::vector<std::vector<int>> test_contact_list(){
@@ -248,8 +262,22 @@ std::vector<Agent> test_random_progress(){
     return agents;
 }
 
+void agents_progress_with_network(int &N, int& T, std::vector<Agent>& agents,
+                                                    std::vector<std::vector<int>>& contacts,std::mt19937& rng,
+                                                    Parameters &param, double &delta, 
+                                                    std::bernoulli_distribution &advance_E,
+                                                    std::bernoulli_distribution &advance_I){
+    std::vector<Agent> agents_copy;
+    for (int j=0; j<T; j++){
+        agents_copy=agents;
+        for (int i=0; i<N; i++){
+            transition_with_network(i, agents_copy, agents[i],contacts,
+                                    rng,param, delta, advance_E,advance_I);
+        }
+}
+}
 
-void progress_with_network(){
+void test_progress_with_network(){
     double delta=0.5;
     int N=200;
     Parameters param(0.2,0.01,0.4);
@@ -292,9 +320,182 @@ void progress_with_network(){
     }
 }
 
+static const float WINDOW_WIDTH = 1200.f;
+static const float WINDOW_HEIGHT = 800.f;
+static const float WINDOW_MARGIN = 80.f;
+static const float NODE_RADIUS = 6.f;
+
+sf::Color getStateColor(State s){
+    switch(s){
+        case State::S:  return sf::Color(55, 138, 221);
+        case State::E1:
+        case State::E2:
+        case State::E3: return sf::Color(186, 117, 23);
+        case State::I1:
+        case State::I2: return sf::Color(192, 76, 42);
+        case State::R:  return sf::Color(29, 158, 117);
+        default:        return sf::Color::White;
+    }
+}
+
+void simulateDay(std::vector<Agent>& agents,
+                 const std::vector<std::vector<int>>& contacts,
+                 std::mt19937& rng,
+                 const Parameters& param,
+                 double delta,
+                 std::bernoulli_distribution& advance_E,
+                 std::bernoulli_distribution& advance_I){
+    std::vector<Agent> next = agents;
+    int N = static_cast<int>(agents.size());
+    for (int i = 0; i < N; i++){
+        transition_with_network(i, agents, next[i], contacts, rng, param, delta, advance_E, advance_I);
+    }
+    agents.swap(next);
+}
+
+void applySpringLayout(std::vector<sf::Vector2f>& positions,
+                       std::vector<sf::Vector2f>& velocities,
+                       const std::vector<std::vector<int>>& contacts,
+                       float dt){
+    int N = static_cast<int>(positions.size());
+    const float repulsionStrength = 18000.f;
+    const float attractionStrength = 0.12f;
+    const float desiredDistance = 120.f;
+
+    for (int i = 0; i < N; i++){
+        velocities[i] = sf::Vector2f(0.f, 0.f);
+    }
+
+    for (int i = 0; i < N; i++){
+        for (int j = i + 1; j < N; j++){
+            sf::Vector2f delta = positions[j] - positions[i];
+            float dist2 = delta.x * delta.x + delta.y * delta.y + 0.01f;
+            float dist = std::sqrt(dist2);
+            sf::Vector2f direction = delta / dist;
+            float repulsion = repulsionStrength / dist2;
+            velocities[i] -= direction * repulsion;
+            velocities[j] += direction * repulsion;
+        }
+    }
+
+    for (int i = 0; i < N; i++){
+        for (int j : contacts[i]){
+            if (j <= i) continue;
+            sf::Vector2f delta = positions[j] - positions[i];
+            float dist = std::sqrt(delta.x * delta.x + delta.y * delta.y) + 0.01f;
+            sf::Vector2f direction = delta / dist;
+            float attraction = (dist - desiredDistance) * attractionStrength;
+            velocities[i] += direction * attraction;
+            velocities[j] -= direction * attraction;
+        }
+    }
+
+    for (int i = 0; i < N; i++){
+        velocities[i] *= 0.80f;
+        positions[i] += velocities[i] * dt;
+        if (positions[i].x < WINDOW_MARGIN) positions[i].x = WINDOW_MARGIN;
+        if (positions[i].x > WINDOW_WIDTH - WINDOW_MARGIN) positions[i].x = WINDOW_WIDTH - WINDOW_MARGIN;
+        if (positions[i].y < WINDOW_MARGIN) positions[i].y = WINDOW_MARGIN;
+        if (positions[i].y > WINDOW_HEIGHT - WINDOW_MARGIN) positions[i].y = WINDOW_HEIGHT - WINDOW_MARGIN;
+    }
+}
+
 int main(){
-    //Agent ej1={1,State::S,0};
-    progress_with_network();
-    test_random_progress();
+    double delta = 0.5;
+    int N = 200;
+    int T = 200;
+    float p = 0.05f;
+    Parameters param(0.2f, 0.01f, 0.4f);
+    float rate_E = n_E * param.sigma;
+    float rate_I = n_I * param.gamma;
+
+    std::mt19937 rng(std::random_device{}());
+    std::bernoulli_distribution advance_E(1 - std::exp(-rate_E * delta));
+    std::bernoulli_distribution advance_I(1 - std::exp(-rate_I * delta));
+
+    std::vector<std::vector<int>> contacts = conctacts_list(N, p, rng);
+    std::vector<Agent> agents;
+    agents.reserve(N);
+    for (int i = 0; i < N - 3; i++){
+        agents.push_back({i, State::S, 0});
+    }
+    for (int i = N - 3; i < N; i++){
+        agents.push_back({i, State::I1, 0});
+    }
+
+    sf::RenderWindow window(sf::VideoMode(sf::Vector2u{static_cast<unsigned int>(WINDOW_WIDTH), static_cast<unsigned int>(WINDOW_HEIGHT)}), "ABM Infection Network");
+    window.setFramerateLimit(60);
+
+    std::uniform_real_distribution<float> randX(WINDOW_MARGIN, WINDOW_WIDTH - WINDOW_MARGIN);
+    std::uniform_real_distribution<float> randY(WINDOW_MARGIN, WINDOW_HEIGHT - WINDOW_MARGIN);
+
+    std::vector<sf::Vector2f> positions(N);
+    std::vector<sf::Vector2f> velocities(N, sf::Vector2f(0.f, 0.f));
+    std::vector<sf::CircleShape> shapes(N);
+    for (int i = 0; i < N; i++){
+        positions[i] = sf::Vector2f(randX(rng), randY(rng));
+        shapes[i].setRadius(NODE_RADIUS);
+        shapes[i].setOrigin(sf::Vector2f(NODE_RADIUS, NODE_RADIUS));
+        shapes[i].setPosition(positions[i]);
+        shapes[i].setFillColor(getStateColor(agents[i].state));
+    }
+
+    sf::Clock clock;
+    int currentDay = 0;
+    float secondsPerDay = 0.35f;
+
+    while (window.isOpen()){
+        while (auto event = window.pollEvent()){
+            if (event->is<sf::Event::Closed>()){
+                window.close();
+            }
+        }
+
+        if (clock.getElapsedTime().asSeconds() > secondsPerDay && currentDay < T){
+            simulateDay(agents, contacts, rng, param, delta, advance_E, advance_I);
+            currentDay += 1;
+            clock.restart();
+            int s = count(agents, State::S);
+            int e1 = count(agents, State::E1);
+            int e2 = count(agents, State::E2);
+            int e3 = count(agents, State::E3);
+            int i1 = count(agents, State::I1);
+            int i2 = count(agents, State::I2);
+            int r = count(agents, State::R);
+            window.setTitle("Day " + std::to_string(currentDay)
+                + "  S=" + std::to_string(s)
+                + " E=" + std::to_string(e1 + e2 + e3)
+                + " I=" + std::to_string(i1 + i2)
+                + " R=" + std::to_string(r));
+        }
+
+        applySpringLayout(positions, velocities, contacts, 0.016f);
+
+        window.clear(sf::Color(245, 245, 240));
+
+        for (int i = 0; i < N; i++){
+            for (int j : contacts[i]){
+                if (j <= i) continue;
+                if (!isInfectious(agents[i].state) && !isInfectious(agents[j].state)){
+                    continue;
+                }
+                sf::Vertex line[2];
+                line[0].position = positions[i];
+                line[0].color = sf::Color(192, 76, 42, 120);
+                line[1].position = positions[j];
+                line[1].color = sf::Color(192, 76, 42, 120);
+                window.draw(line, 2u, sf::PrimitiveType::Lines);
+            }
+        }
+
+        for (int i = 0; i < N; i++){
+            shapes[i].setPosition(positions[i]);
+            shapes[i].setFillColor(getStateColor(agents[i].state));
+            window.draw(shapes[i]);
+        }
+
+        window.display();
+    }
+
     return 0;
 }
