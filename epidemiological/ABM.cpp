@@ -440,34 +440,74 @@ int main(){
         shapes[i].setFillColor(getStateColor(agents[i].state));
     }
 
+    // Load font for UI text
+    sf::Font font;
+    if (!font.openFromFile("C:\\Windows\\Fonts\\arial.ttf")) {
+        std::cerr << "Warning: Could not load font from C:\\Windows\\Fonts\\arial.ttf" << std::endl;
+    }
+
+    // UI text objects
+    sf::Text dayText(font, "", 16);
+    sf::Text statusText(font, "", 14);
+    sf::Text pausedText(font, "", 16);
+
+    dayText.setPosition(sf::Vector2f(10.f, 10.f));
+    dayText.setFillColor(sf::Color::Black);
+
+    statusText.setPosition(sf::Vector2f(10.f, 35.f));
+    statusText.setFillColor(sf::Color::Black);
+
+    pausedText.setPosition(sf::Vector2f(10.f, 110.f));
+    pausedText.setFillColor(sf::Color::Red);
+
     sf::Clock clock;
     int currentDay = 0;
     float secondsPerDay = 0.35f;
+    bool paused = false;
 
     while (window.isOpen()){
         while (auto event = window.pollEvent()){
             if (event->is<sf::Event::Closed>()){
                 window.close();
             }
+            if (auto* keyEvent = event->getIf<sf::Event::KeyPressed>()){
+                if (keyEvent->code == sf::Keyboard::Key::Space){
+                    paused = !paused;
+                }
+            }
         }
 
-        if (clock.getElapsedTime().asSeconds() > secondsPerDay && currentDay < T){
+        if (!paused && clock.getElapsedTime().asSeconds() > secondsPerDay && currentDay < T){
             simulateDay(agents, contacts, rng, param, delta, advance_E, advance_I);
             currentDay += 1;
             clock.restart();
-            int s = count(agents, State::S);
-            int e1 = count(agents, State::E1);
-            int e2 = count(agents, State::E2);
-            int e3 = count(agents, State::E3);
-            int i1 = count(agents, State::I1);
-            int i2 = count(agents, State::I2);
-            int r = count(agents, State::R);
-            window.setTitle("Day " + std::to_string(currentDay)
-                + "  S=" + std::to_string(s)
-                + " E=" + std::to_string(e1 + e2 + e3)
-                + " I=" + std::to_string(i1 + i2)
-                + " R=" + std::to_string(r));
         }
+
+        // Update UI text
+        int s = count(agents, State::S);
+        int e1 = count(agents, State::E1);
+        int e2 = count(agents, State::E2);
+        int e3 = count(agents, State::E3);
+        int i1 = count(agents, State::I1);
+        int i2 = count(agents, State::I2);
+        int r = count(agents, State::R);
+
+        dayText.setString("Day: " + std::to_string(currentDay));
+
+        statusText.setString("S: " + std::to_string(s) + "  E: " + std::to_string(e1 + e2 + e3)
+                           + "  I: " + std::to_string(i1 + i2) + "  R: " + std::to_string(r));
+
+        if (paused){
+            pausedText.setString("[PAUSED]");
+        } else {
+            pausedText.setString("");
+        }
+
+        window.setTitle("Day " + std::to_string(currentDay)
+            + "  S=" + std::to_string(s)
+            + " E=" + std::to_string(e1 + e2 + e3)
+            + " I=" + std::to_string(i1 + i2)
+            + " R=" + std::to_string(r));
 
         applySpringLayout(positions, velocities, contacts, 0.016f);
 
@@ -493,6 +533,11 @@ int main(){
             shapes[i].setFillColor(getStateColor(agents[i].state));
             window.draw(shapes[i]);
         }
+
+        // Draw UI panel text
+        window.draw(dayText);
+        window.draw(statusText);
+        window.draw(pausedText);
 
         window.display();
     }
