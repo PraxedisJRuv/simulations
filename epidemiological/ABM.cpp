@@ -89,6 +89,7 @@ struct Agent{
     }
 };
 
+
 int count(std::vector<Agent> agents, State I){
     int count =0;
     for (int i=0; i<agents.size(); i++){
@@ -126,6 +127,61 @@ int neighbors_in_state(int i, std::vector<std::vector<int>> &c, std::vector<Agen
     }
     return count;
 }
+
+ void transition_with_network(int i, std::vector<Agent> &a, Agent & agent, std::vector<std::vector<int>> &c, 
+                                std::mt19937& rng, const Parameters &param, const double &delta,
+                                std::bernoulli_distribution advance_E, std::bernoulli_distribution advance_I){
+        
+        switch(agent.state){
+            case State::S:{
+                double prob=1.0-std::exp(-param.beta*delta);
+                int exposure= neighbors_in_state(i, c, a, State::I1);
+               
+                for (int j=0; j<exposure; j++){
+                    if(std::bernoulli_distribution(prob)(rng)){
+                    agent.state=State::E1;
+                    agent.time_in_state=0;
+                    break;}
+                }
+                if(agent.state!=State::E1){agent.time_in_state=agent.time_in_state+delta;}
+                }break;
+            case State::E1:
+                if(advance_E(rng)){
+                    agent.state=State::E2;
+                    agent.time_in_state=0;}
+                else{agent.time_in_state=agent.time_in_state+delta;}
+                break;
+            case State::E2:
+                if(advance_E(rng)){
+                    agent.state=State::E3;
+                    agent.time_in_state=0;}
+                else{agent.time_in_state=agent.time_in_state+delta;}
+                break;
+            case State::E3:
+                if(advance_E(rng)){
+                    agent.state=State::I1;
+                    agent.time_in_state=0;}
+                else{agent.time_in_state=agent.time_in_state+delta;}
+                break;
+            case State::I1:
+                if(advance_I(rng)){
+                    agent.state=State::I2;
+                    agent.time_in_state=0;}
+                else{agent.time_in_state=agent.time_in_state+delta;}
+                break;
+            case State::I2:
+                if(advance_I(rng)){
+                    agent.state=State::R;
+                    agent.time_in_state=0;} 
+                else{agent.time_in_state=agent.time_in_state+delta;}
+                break;
+            
+            default: 
+                agent.time_in_state=agent.time_in_state+delta;
+                break;
+        }
+
+    }
 
 std::vector<std::vector<int>> test_contact_list(){
     int N=200;
@@ -173,7 +229,7 @@ std::vector<Agent> test_random_progress(){
         agents.push_back({i,State::I1,0});
     }
 
-    for (int j=0; j<40; j++){
+    for (int j=0; j<30; j++){
     for (int i=0; i<agents.size(); i++){
         agents[i].transition(agents[i], rng, param, delta, advance_E, advance_I);
     }
@@ -192,15 +248,53 @@ std::vector<Agent> test_random_progress(){
     return agents;
 }
 
-int main(){
-    //Agent ej1={1,State::S,0};
-    std::vector<Agent> agents= test_random_progress();
-    std::vector<std::vector<int>> contacts= test_contact_list();
-    int n=0;
-    for (int i=10; i<200; i=i+10){
-        n=neighbors_in_state(i,contacts,agents,State::I1);
-        std::cout<<n<<", ";
+
+void progress_with_network(){
+    double delta=0.5;
+    int N=200;
+    Parameters param(0.2,0.01,0.4);
+    float rate_E=n_E*param.sigma;
+    float rate_I=n_I*param.gamma;
+    
+    std::mt19937 rng(std::random_device{}());
+
+    std::bernoulli_distribution advance_E(1-std::exp(-rate_E*delta));
+    std::bernoulli_distribution advance_I(1-std::exp(-rate_I*delta));
+
+    std::vector<Agent> agents;
+    for (int i=0; i<197; i++){
+        agents.push_back({i,State::S,0});
+    }
+    for (int i=197; i<200; i++){
+        agents.push_back({i,State::I1,0});
     }
 
+    
+    float p_contact=0.05;
+    std::vector<std::vector<int>> contacts=conctacts_list(N, p_contact, rng);
+
+    std::vector<Agent> agents_copy;
+    for (int j=0; j<30; j++){
+        agents_copy=agents;
+        for (int i=0; i<N; i++){
+            transition_with_network(i, agents_copy, agents[i],contacts,
+                                    rng,param, delta, advance_E,advance_I);
+        }
+            std::cout<<"S: "<<count(agents,State::S)
+                 <<"\t E1:"<<count(agents,State::E1)
+                 <<"\t E2:"<<count(agents,State::E2)
+                 <<"\t E3:"<<count(agents,State::E3)
+                 <<"\t I1:"<<count(agents,State::I1)
+                 <<"\t I2:"<<count(agents,State::I2)
+                 <<"\t R:"<<count(agents,State::R)
+                 <<"\t";
+            std::cout<<j<<"\n"; 
+    }
+}
+
+int main(){
+    //Agent ej1={1,State::S,0};
+    progress_with_network();
+    test_random_progress();
     return 0;
 }
