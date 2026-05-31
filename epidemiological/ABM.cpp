@@ -117,7 +117,17 @@ int degree(int i, std::vector<std::vector<int>>& c){
 return c[i].size();
 }
 
-void test_contact_list(){
+int neighbors_in_state(int i, std::vector<std::vector<int>> &c, std::vector<Agent> &a, State I){
+    int count=0;
+    for (int j=0; j<c[i].size(); j++){
+        if(a[c[i][j]].state==I){
+            count = count+1;
+        }
+    }
+    return count;
+}
+
+std::vector<std::vector<int>> test_contact_list(){
     int N=200;
     float p=0.05;
 
@@ -138,14 +148,15 @@ void test_contact_list(){
     }
     mean=sum/N;
 
-    std::cout<<min<<"\t"<<max<<"\t"<<mean;
+    std::cout<<min<<"\t"<<max<<"\t"<<mean<<"\n";
     
+    return contacts;
 }
 
-void test_random_progress(){
+std::vector<Agent> test_random_progress(){
     double delta=0.5;
     int N=200;
-    Parameters param(0.01,0.2,0.1);
+    Parameters param(0.2,0.01,0.4);
     float rate_E=n_E*param.sigma;
     float rate_I=n_I*param.gamma;
     
@@ -162,7 +173,7 @@ void test_random_progress(){
         agents.push_back({i,State::I1,0});
     }
 
-    for (int j=0; j<100; j++){
+    for (int j=0; j<40; j++){
     for (int i=0; i<agents.size(); i++){
         agents[i].transition(agents[i], rng, param, delta, advance_E, advance_I);
     }
@@ -178,11 +189,18 @@ void test_random_progress(){
         std::cout<<j<<"\n"; 
 
     }
+    return agents;
 }
 
 int main(){
     //Agent ej1={1,State::S,0};
-    //test_random_progress();
-    test_contact_list();
+    std::vector<Agent> agents= test_random_progress();
+    std::vector<std::vector<int>> contacts= test_contact_list();
+    int n=0;
+    for (int i=10; i<200; i=i+10){
+        n=neighbors_in_state(i,contacts,agents,State::I1);
+        std::cout<<n<<", ";
+    }
+
     return 0;
 }

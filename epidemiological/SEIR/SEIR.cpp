@@ -8,10 +8,10 @@
 // Window and drawing constants
 const unsigned int W = 900;
 const unsigned int H = 600;
-const float LEFT_MARGIN = 50.f;
-const float RIGHT_MARGIN = 50.f;
-const float TOP_MARGIN = 50.f;
-const float BOTTOM_MARGIN = 50.f;
+const float LEFT_MARGIN = 110.f;
+const float RIGHT_MARGIN = 140.f;
+const float TOP_MARGIN = 100.f;
+const float BOTTOM_MARGIN = 100.f;
 
 // Convert simulation (time, value) to screen coordinates
 static sf::Vector2f toScreen(double t, double value, double T_max, double N) {
@@ -41,6 +41,7 @@ static void drawThickCurve(sf::RenderTarget& target, const std::vector<double>& 
         target.draw(segment);
     }
 }
+
 /*
 S is suceptible
 E is Exposed
@@ -297,7 +298,7 @@ int main(){
                 label.setFillColor(sf::Color::Black);
                 sf::FloatRect bounds = label.getLocalBounds();
                 label.setOrigin(sf::Vector2f(bounds.size.x / 2.f, -2.f));
-                label.setPosition(sf::Vector2f(x, static_cast<float>(H) - BOTTOM_MARGIN + 4.f));
+                label.setPosition(sf::Vector2f(x, static_cast<float>(H) - BOTTOM_MARGIN + 6.f));
                 window.draw(label);
             }
         }
@@ -316,7 +317,7 @@ int main(){
                 label.setFillColor(sf::Color::Black);
                 sf::FloatRect bounds = label.getLocalBounds();
                 label.setOrigin(sf::Vector2f(bounds.size.x + 4.f, bounds.size.y / 2.f));
-                label.setPosition(sf::Vector2f(LEFT_MARGIN - 8.f, y));
+                label.setPosition(sf::Vector2f(LEFT_MARGIN - 12.f, y));
                 window.draw(label);
             }
         }
@@ -326,20 +327,28 @@ int main(){
             xLabel.setFillColor(sf::Color::Black);
             sf::FloatRect xBounds = xLabel.getLocalBounds();
             xLabel.setOrigin(sf::Vector2f(xBounds.size.x / 2.f, 0.f));
-            xLabel.setPosition(sf::Vector2f(W/2.f, static_cast<float>(H) - BOTTOM_MARGIN/2.f));
+            xLabel.setPosition(sf::Vector2f(W/2.f, static_cast<float>(H) - BOTTOM_MARGIN/2.f + 12.f));
             window.draw(xLabel);
 
             sf::Text yLabel(font, "Population", 14u);
             yLabel.setFillColor(sf::Color::Black);
             sf::FloatRect yBounds = yLabel.getLocalBounds();
             yLabel.setOrigin(sf::Vector2f(yBounds.size.x / 2.f, yBounds.size.y / 2.f));
-            yLabel.setPosition(sf::Vector2f(15.f, H/2.f));
+            yLabel.setPosition(sf::Vector2f(24.f, H/2.f));
             yLabel.setRotation(sf::degrees(-90.f));
             window.draw(yLabel);
 
-            float legendX = W - RIGHT_MARGIN - 180.f;
+            float legendX = W - RIGHT_MARGIN + 10.f;
             float legendY = TOP_MARGIN + 20.f;
+            const float legendWidth = RIGHT_MARGIN - 20.f;
             const float legendHeight = 18.f;
+            sf::RectangleShape legendBg(sf::Vector2f(legendWidth, legendHeight * 4 + 16.f));
+            legendBg.setFillColor(sf::Color(255, 255, 255, 230));
+            legendBg.setOutlineColor(sf::Color(180, 180, 180));
+            legendBg.setOutlineThickness(1.f);
+            legendBg.setPosition(sf::Vector2f(legendX, legendY - 8.f));
+            window.draw(legendBg);
+
             struct LegendItem { const char* name; sf::Color color; } items[] = {
                 {"S (susceptible)", sf::Color::Blue},
                 {"E (exposed)", sf::Color(255, 191, 0)},
@@ -348,12 +357,12 @@ int main(){
             };
 
             for (int i = 0; i < 4; ++i) {
-                sf::RectangleShape swatch(sf::Vector2f(24.f, 8.f));
+                sf::RectangleShape swatch(sf::Vector2f(18.f, 8.f));
                 swatch.setFillColor(items[i].color);
-                swatch.setPosition(sf::Vector2f(legendX, legendY + i * legendHeight));
+                swatch.setPosition(sf::Vector2f(legendX + 8.f, legendY + i * legendHeight));
                 window.draw(swatch);
 
-                sf::Text text(font, items[i].name, 14u);
+                sf::Text text(font, items[i].name, 12u);
                 text.setFillColor(sf::Color::Black);
                 text.setPosition(sf::Vector2f(legendX + 32.f, legendY - 4.f + i * legendHeight));
                 window.draw(text);
