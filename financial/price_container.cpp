@@ -234,7 +234,7 @@ std::vector<PriceContainer> graph_GBM_price_paths(){
     int T = 1;
     int M = 1000; // number of paths
     int n = 252; // steps
-    double r = 0.03;
+    double r = 0.5;
 
         std::vector<PriceContainer> paths = simulateBGM_rn(start, vola, T, M, n, r);
 
