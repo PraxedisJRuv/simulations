@@ -8,13 +8,15 @@ A collection of mathematical simulations including epidemiological disease model
   - SIR (Susceptible-Infected-Recovered) compartmental model with Euler integration
   - SEIR (Susceptible-Exposed-Infected-Recovered) model with staged compartments
   - Agent-Based Model (ABM) for population-level disease dynamics
-  
+<img width="800" height="554" alt="abm usable" src="https://github.com/user-attachments/assets/05cd0662-e7dd-49d0-a175-c36433d6c9a6" />
+
 - **Financial Simulations**:
   - VaR messurment
   - Monte Carlo based on GBM
   - black sholes for testing error in stochastic methods
   - cholesky for testing VaR based in returns
-  
+<img width="500" height="312" alt="Adobe Express - MonteCarlo" src="https://github.com/user-attachments/assets/c570ce70-49f1-472d-a7da-073e370b51ea" />
+
 - **Visualization**: SFML-based graphics rendering for simulation results
 
 ## Tech stack
