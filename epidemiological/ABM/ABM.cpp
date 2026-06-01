@@ -408,7 +408,7 @@ int main(){
     Parameters param(0.2f, 0.3f, 0.4f);
     float rate_E = n_E * param.sigma;
     float rate_I = n_I * param.gamma;
-
+    
     std::mt19937 rng(std::random_device{}());
     std::bernoulli_distribution advance_E(1 - std::exp(-rate_E * delta));
     std::bernoulli_distribution advance_I(1 - std::exp(-rate_I * delta));
