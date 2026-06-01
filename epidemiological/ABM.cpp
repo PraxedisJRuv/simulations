@@ -404,8 +404,8 @@ int main(){
     double delta = 0.5;
     int N = 200;
     int T = 200;
-    float p = 0.05f;
-    Parameters param(0.2f, 0.01f, 0.4f);
+    float p = 0.04f;
+    Parameters param(0.2f, 0.3f, 0.4f);
     float rate_E = n_E * param.sigma;
     float rate_I = n_I * param.gamma;
 
