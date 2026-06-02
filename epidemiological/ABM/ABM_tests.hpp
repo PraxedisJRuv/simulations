@@ -7,7 +7,7 @@ std::vector<std::vector<int>> test_contact_list(){
 
     double mean=0;
     int max=0;
-    int min=300;
+    int min=N+1;
 
     int aux=0;
     int sum=0;
