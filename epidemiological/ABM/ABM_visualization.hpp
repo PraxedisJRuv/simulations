@@ -1,4 +1,5 @@
-#include "functions.h"
+#pragma once
+#include "ABM_functions.hpp"
 #include<SFML/Graphics.hpp>
 
 static const float WINDOW_WIDTH = 1200.f;

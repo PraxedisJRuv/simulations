@@ -1,5 +1,5 @@
 #pragma once
-#include"strucutres.h"
+#include"ABM_strucutres.hpp"
 #include <random>
 
 /*

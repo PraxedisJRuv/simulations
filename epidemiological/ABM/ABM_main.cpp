@@ -1,4 +1,4 @@
-#include "visualization.h"
+#include "ABM_visualization.hpp"
 
 int main(){
     double delta=0.5;

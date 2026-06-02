@@ -1,4 +1,5 @@
-#include "functions.h"
+#pragma once
+#include "ABM_functions.hpp"
 
 std::vector<std::vector<int>> test_contact_list(){
     int N=200;

@@ -2,3 +2,5 @@
 .vscode/
 test.cpp
 ARIAL.TTF
+ABM_test.cpp
+SEIR_test.cpp
