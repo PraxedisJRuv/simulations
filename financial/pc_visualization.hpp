@@ -1,242 +1,11 @@
-#include<iostream>
-#include<vector>
-#include <cmath>
-#include<random>
-#include <algorithm>
+#pragma once
+#include "pc_functions.hpp"
 #include <SFML/Graphics.hpp>
-#include <limits>
-#include <utility>
 
-class PriceContainer{
-    
-    public:
-    
-    std::vector<double> close;
-    
-    PriceContainer(std::vector<double> prices){
-        close=prices;
-    }
 
-    double mean(){
-        double sum=0;
-        double cmean=0;
-        for(int i=0; i<close.size(); i++){
-            sum=sum+close[i];
-        }
-        cmean=sum/close.size();
-        return cmean;
-    }
+std::vector<PriceContainer> graph_GBM_price_paths(const Sim_Paramaeters& sim, PriceContainer& s, const Asset_Parameters & p, std::mt19937& rng){
 
-    double std_dev(){
-        double cmean=mean();
-        double desv=0;
-        double sum =0;
-        double aux=0;
-        for (int i=0; i<close.size(); i++){
-            aux=std::pow((close[i]-cmean),2);
-            sum=sum+aux;
-        }
-        desv=std::sqrt((sum/(close.size()-1)));
-        return desv;
-    }
-
-    void print(){
-        for (int i=0;i<close.size(); i++){
-            std::cout<<close[i]<<", ";
-        }
-        std::cout<<"\n";
-    }
-
-    double current_price(){
-        int n=close.size();
-        return close[n-1];
-    }
-
-    std::vector<double> returns(){
-        std::vector<double> vreturns((int)close.size()-1);
-        for (int i=0; i<(int)close.size()-1; i++){
-            vreturns[i]=(close[i+1]/close[i])-1.0;
-        }
-        return vreturns;
-    }
-
-    double max(){
-        std::vector<double> a=close;
-        std::sort(a.begin(),a.end());
-        return a[a.size()-1];
-    }
-
-    double min(){
-     std::vector<double> a=close;
-     std::sort(a.begin(),a.end());
-     return a[0];   
-    }
-};
-
-double normalCDF(double x){
-    return 0.5*std::erfc(-x/std::sqrt(2.0));
-}
-
-double flat_yield(PriceContainer stock, float t, double r){
-    return stock.current_price()*std::exp(r*t);
-}
-
-std::vector<PriceContainer> simulateBGM(PriceContainer& s, double mu, double vola, int T, int M, int n){
-    std::vector<double> vec(n,0);
-    std::vector<PriceContainer> paths(M,PriceContainer(vec));
-    std::mt19937 rng(std::random_device{}());
-    std::normal_distribution<double> Z(0,1);
-    double delta = static_cast<double>(T)/static_cast<double>(n);
-    double multiplier=0;
-    int last=(int)(s.close).size();
-
-    for (int i=0; i<M; i++){
-        paths[i].close[0]=s.close[last-1];
-    }
-
-    for (int j=1; j<n; j++){
-        for (int i=0; i<M; i++){
-            multiplier = std::exp(mu*delta + vola*std::sqrt(delta)*Z(rng));
-            paths[i].close[j] = (paths[i].close[j-1]) * multiplier;
-        }
-    }
-
-    return paths;
-}
-
-std::vector<PriceContainer> simulateBGM_rn(PriceContainer& s, double vola, int T, int M, int n, double r){
-    std::vector<double> vec(n,0);
-    std::vector<PriceContainer> paths(M,PriceContainer(vec));
-    std::mt19937 rng(std::random_device{}());
-    std::normal_distribution<double> Z(0,1);
-    double delta = static_cast<double>(T)/static_cast<double>(n);
-    double multiplier=0;
-    int last=(int)(s.close).size();
-
-    for (int i=0; i<M; i++){
-        paths[i].close[0]=s.close[last-1];
-    }
-
-    for (int j=1; j<n; j++){
-        for (int i=0; i<M; i++){
-            multiplier = std::exp((r - 0.5*vola*vola)*delta + vola*std::sqrt(delta)*Z(rng));
-            paths[i].close[j] = (paths[i].close[j-1]) * multiplier;
-        }
-    }
-
-    return paths;
-}
-
-/*
-mu is the expected rate of return. Percentage growth
-vola is the volatility of the asset The standard deviation of the asset's continuously compounded (log) returns
-T is the time horizon, generally is a year
-M is the amount of paths
-n is the amoun of steps in the simulation, that's why our "delta" is T/n
-k is the strike or a fixed price for a stock with expiration T
-r is the return risk-free rate
-the exp(-r*T) is a discount thinking that x money tomorrow worths less than x money today
-We're getting the current payoff for something sold at T
-*/
-
-double mc_european_call_payoff(PriceContainer stock, double mu, double vola, int T, int M, int n, double k, double r){
-    std::vector<PriceContainer> paths = simulateBGM_rn(stock, vola, T, M, n, r);
-    double sum = 0.0;
-    for (int i = 0; i < M; ++i){
-        sum += std::max(paths[i].close[n-1] - k, 0.0);
-    }
-    double payoff_mean = (std::exp(-r*T)) * (sum / static_cast<double>(M));
-    return payoff_mean;
-}
-
-double black_scholes(PriceContainer stock, double vola, int T, double k, double r){
-    double d1= (std::log(stock.current_price()/k)+(r+0.5*vola*vola)*T)/(vola*std::sqrt(T));
-    double d2=d1-(vola*std::sqrt(T));
-
-    return stock.current_price()*normalCDF(d1)-k*(std::exp(-r*T))*normalCDF(d2);
-
-}
-
-    std::vector<double> cholesky_GBM_r(double w1, double w2, double rho, double mu1, double mu2, double vola1, double vola2, int M, int T, int n){
-    std::vector<double> vec(M,0);
-    std::mt19937 rng(std::random_device{}());
-    std::normal_distribution<double> Z(0,1);
-    double delta = static_cast<double>(T)/static_cast<double>(n);
-
-    for (int i=0; i<M; i++){
-        double z1=Z(rng);
-        double z2=Z(rng);
-        double x1=z1;
-        double x2=rho*z1+std::sqrt(1-rho*rho)*z2;
-
-        double r1=mu1*delta+vola1*std::sqrt(delta)*x1;
-        double r2=mu2*delta+vola2*std::sqrt(delta)*x2;
-
-        vec[i]=w1*r1+w2*r2;
-    }
-    return vec;
-}
-
-double VaR(std::vector<PriceContainer> paths, float percentile, int M, int n ){
-    std::vector<double> vvar(M,0);
-    for (int i=0; i<M; i++){
-        vvar[i]=(paths[i].close[n-1]);
-    }
-    std::sort(vvar.begin(),vvar.end());
-    
-    return vvar[M*percentile]-paths[0].close[0];
-}
-
-int test(){
-PriceContainer test({10,10});
-    //std::vector<PriceContainer> paths=simulateBGM(test,0.1,0.3,1,15,100);
-    double mc_price=mc_european_call_payoff(test,0.1,0.3,1,10000,252,11.0,0.1);
-    double bs_price=black_scholes(test,0.3,1,11.0,0.1);
-    double error =std::abs(mc_price -bs_price);
-    double errorpercent=error/bs_price;
-    std::cout<<mc_price<<"\t"<<bs_price<<"\t"<<error<<"\t"<<errorpercent<<"%";
-    std::cout<<"\n"<<VaR(simulateBGM(test,0.1,0.3,1,100,252),0.01,100,252);
-    return 0;
-}
-
-void cholesky_test(){
-    int M=10000;
-    std::vector <double> choleskyport=cholesky_GBM_r(0.6,0.4,1,0.07,0.03,0.20,0.05,M,1,252);
-    std::sort(choleskyport.begin(),choleskyport.end());
-    double var_1pct  = choleskyport[M * 0.01];
-    double var_5pct  = choleskyport[M * 0.05];
-
-    double mean = 0.0;
-    
-    for (double p : choleskyport) {
-        mean = mean + p;
-    }
-    mean /= M;
-
-    std::cout << "mean daily return : " << mean*100 << "%\n"
-              << "1% VaR \t\t: " << var_1pct*100 << "%\n"
-              << "5% VaR \t\t: " << var_5pct*100 << "%\n";
-
-}
-
-// forward-declare histogram drawer used by graph_GBM_price_paths
-void graph_VaR(const std::vector<double>& pnl, double var_1pct);
-// forward-declare animated drawer
-void graph_GBM_animate_and_hist(const std::vector<PriceContainer>& paths);
-
-// helper: compute P&L vector and 1% VaR from simulated paths
-std::pair<std::vector<double>, double> compute_pnl_and_var(const std::vector<PriceContainer>& paths);
-
-std::vector<PriceContainer> graph_GBM_price_paths(){
-    // Simulation parameters
-    PriceContainer start({100.0});
-    double vola = 0.3;
-    int T = 1;
-    int M = 1000; // number of paths
-    int n = 252; // steps
-    double r = 0.5;
-
-        std::vector<PriceContainer> paths = simulateBGM_rn(start, vola, T, M, n, r);
+        std::vector<PriceContainer> paths = simulateBGM_rn(sim, s, p, rng);
 
         // find min/max prices across all paths/time (for log scaling)
         double p_min = std::numeric_limits<double>::infinity();
@@ -301,11 +70,11 @@ std::vector<PriceContainer> graph_GBM_price_paths(){
 
             // draw each path - low alpha so dense regions darken
             for (const auto &pc : paths){
-                sf::VertexArray va(sf::PrimitiveType::LineStrip, (size_t)n);
-                for (int j = 0; j < n; ++j){
+                sf::VertexArray va(sf::PrimitiveType::LineStrip, (size_t)sim.n);
+                for (int j = 0; j < sim.n; ++j){
                     double price = pc.close[j];
                     double logp = std::log(price);
-                    float x = pad + (float)j / (float)(n-1) * (W - 2*pad);
+                    float x = pad + (float)j / (float)(sim.n-1) * (W - 2*pad);
                         double t = (logp - log_min) / (log_max - log_min);
                         if (t < 0.0) t = 0.0; if (t > 1.0) t = 1.0;
                         float y = (float)((H - pad) - t * (H - 2*pad));
@@ -316,7 +85,7 @@ std::vector<PriceContainer> graph_GBM_price_paths(){
             }
 
             // draw initial price horizontal line
-            double init_price = start.current_price();
+            double init_price = s.current_price();
             float init_y = (float)((H - pad) - (std::log(init_price) - log_min) / (log_max - log_min) * (H - 2*pad));
             sf::VertexArray initLine(sf::PrimitiveType::Lines, 2);
             initLine[0].position = sf::Vector2f(pad, init_y);
@@ -329,11 +98,10 @@ std::vector<PriceContainer> graph_GBM_price_paths(){
         }
 
         // after closing the paths window, return simulated paths
-        return paths;
-    }
+    return paths;
+}
 
-// compute P&L vector (percent returns) and 1% VaR from simulated paths
-std::pair<std::vector<double>, double> compute_pnl_and_var(const std::vector<PriceContainer>& paths){
+std::pair<std::vector<double>, double> compute_pnl_and_var(const std::vector<PriceContainer>& paths, double& percent){
     std::pair<std::vector<double>, double> out;
     if (paths.empty()) return out;
     std::vector<double> pnl;
@@ -350,15 +118,15 @@ std::pair<std::vector<double>, double> compute_pnl_and_var(const std::vector<Pri
     }
     std::vector<double> sorted_pnl = pnl;
     std::sort(sorted_pnl.begin(), sorted_pnl.end());
-    double var_1pct = 0.0;
+    double var_pct = 0.0;
     if (!sorted_pnl.empty()){
-        int idx = std::max(0, (int)(sorted_pnl.size()*0.01));
-        var_1pct = sorted_pnl[idx];
+        int idx = std::max(0, (int)(sorted_pnl.size()*percent));
+        var_pct = sorted_pnl[idx];
     }
-    return {pnl, var_1pct};
+    return {pnl, var_pct};
 }
 
-    void graph_VaR(const std::vector<double>& pnl, double var_1pct){
+void graph_VaR(const std::vector<double>& pnl, double var_pct){
         // histogram window
         const unsigned W = 1000, H = 600;
         const float pad = 60.0f;
@@ -416,7 +184,7 @@ std::pair<std::vector<double>, double> compute_pnl_and_var(const std::vector<Pri
                 float bar_y = pad + plot_height - bar_h;
 
                 double bin_center = pnl_min + (i + 0.5) * bin_width;
-                sf::Color col = bin_center < var_1pct
+                sf::Color col = bin_center < var_pct
                               ? sf::Color(192, 76, 42, 200)
                               : sf::Color(55, 138, 221, 200);
 
@@ -427,7 +195,7 @@ std::pair<std::vector<double>, double> compute_pnl_and_var(const std::vector<Pri
             }
 
             // VaR vertical line
-            float var_x = pad + ((var_1pct - pnl_min) / (pnl_max - pnl_min)) * plot_width;
+            float var_x = pad + ((var_pct - pnl_min) / (pnl_max - pnl_min)) * plot_width;
             sf::RectangleShape var_line(sf::Vector2f(2, plot_height));
             var_line.setPosition(sf::Vector2f(var_x, pad));
             var_line.setFillColor(sf::Color(192, 76, 42));
@@ -467,7 +235,7 @@ std::pair<std::vector<double>, double> compute_pnl_and_var(const std::vector<Pri
 
                 // VaR numeric annotation
                 char vbuf[64];
-                std::snprintf(vbuf, sizeof(vbuf), "VaR(1%%)=%.2f", var_1pct);
+                std::snprintf(vbuf, sizeof(vbuf), "VaR(1%%)=%.2f", var_pct);
                 sf::Text vt(font, vbuf, 14);
                 vt.setFillColor(sf::Color(192,76,42));
                 // place above the var line
@@ -475,19 +243,10 @@ std::pair<std::vector<double>, double> compute_pnl_and_var(const std::vector<Pri
                 window.draw(vt);
             }
 
-            window.display();
-        }
+        window.display();
     }
-
-int main(){
-    // Run the GBM price paths visualization, then animate histogram updating
-    std::vector<PriceContainer> paths = graph_GBM_price_paths();
-    graph_GBM_animate_and_hist(paths);
-    
-    return 0;
 }
 
-// Animate adding paths one-by-one and update histogram live
 void graph_GBM_animate_and_hist(const std::vector<PriceContainer>& paths){
     if (paths.empty()) return;
     int M = (int)paths.size();
