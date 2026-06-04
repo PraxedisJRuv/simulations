@@ -141,7 +141,7 @@ std::array<Population,3> euler_slope_age(std::array<Population,3> pop, std::arra
             pop[i].R=recovered;
         }
         return pop;
-    }
+}
 
 std::array<Population,3> change_age(double T_end, double delta, std::array<Population,3>& pop, std::array<std::array<float,3>,3> beta, std::array<double,3> gamma){
         double t=0;

@@ -1,5 +1,5 @@
-#include "ABM_visualization.hpp"
-#include "ABM_tests.hpp"
+#include "headers/ABM_visualization.hpp"
+#include "headers/ABM_tests.hpp"
 
 int main(){
     double delta=0.5;

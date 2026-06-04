@@ -1,4 +1,5 @@
-#include "SEIR_visualization.hpp"
+#include "headers/SEIR_visualization.hpp"
+#include "headers/SEIR_tests.hpp"
 
 /*
 State (S, E, I ,R)

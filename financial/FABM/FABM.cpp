@@ -22,7 +22,6 @@ struct Trader{
     void buy(double price){
         
         if(wealth>=price){
-            std::cout<<"comprando"<<"\n";
             wealth=wealth-price;
             shares=shares+1;
         }
@@ -31,7 +30,6 @@ struct Trader{
     void sell(double price){
         
         if(shares>=1){
-            std::cout<<"vendiendo"<<"\n";
             wealth=wealth+price;
             shares=shares-1;
         }
@@ -152,8 +150,6 @@ void desired_action(Trader& t, const PriceContainer& p, const double fair_value)
 
 void desired_action_test(){
     
-    
-
     Trader a(1,Strategy::Fundamentalist);
     Trader b(1,Strategy::Chartist);
     Trader c(1,Strategy::Random);
