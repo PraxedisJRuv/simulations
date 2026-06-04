@@ -11,6 +11,6 @@ int main(){
     std::vector<PriceContainer> paths= graph_GBM_price_paths(sim, price, p, rng);
     std::pair<std::vector<double>, double> a=compute_pnl_and_var(paths, percent);
     graph_VaR(a.first,a.second);
-    graph_GBM_animate_and_hist(paths);
+    //graph_GBM_animate_and_hist(paths);
     return 0;
 }
