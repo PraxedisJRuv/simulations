@@ -1,3 +1,4 @@
+#pragma once
 #include "SIR_structures.hpp"
 #include <algorithm>
 #include <array>

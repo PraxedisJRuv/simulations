@@ -1,3 +1,4 @@
+#pragma once
 #include "SIR_functions.hpp"
 
 void test_age_groups(){

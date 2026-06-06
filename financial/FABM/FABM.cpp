@@ -8,6 +8,7 @@ struct Trader{
     int id;
     double wealth;
     int shares;
+    int last_desicion;
     Strategy strategy;
 
     Trader(int id, Strategy strategy){
@@ -17,6 +18,7 @@ struct Trader{
         std::mt19937 rng(std::random_device{}());
         std::uniform_real_distribution<double>Z(500,1500);
         this->wealth=Z(rng);
+        last_desicion=0;
     }
 
     void buy(double price){
@@ -24,6 +26,7 @@ struct Trader{
         if(wealth>=price){
             wealth=wealth-price;
             shares=shares+1;
+            last_desicion=1;
         }
     }
 
@@ -32,9 +35,9 @@ struct Trader{
         if(shares>=1){
             wealth=wealth+price;
             shares=shares-1;
+            last_desicion=-1;
         }
     }
-
 };
 
 class PriceContainer{
@@ -101,11 +104,15 @@ class PriceContainer{
      std::sort(a.begin(),a.end());
      return a[0];   
     }
+
+    void update_price(double new_price){
+        close.push_back(new_price);
+        size++;
+    }
 };
 
 void desired_action(Trader& t, const PriceContainer& p, const double fair_value){
-
-
+    t.last_desicion=0;
     switch(t.strategy){
 
         case Strategy::Fundamentalist:{
@@ -148,6 +155,31 @@ void desired_action(Trader& t, const PriceContainer& p, const double fair_value)
     }
 }
 
+
+//lamba is liquidity, the smaller the lambda, the more liquid it is, the bigger the less operations it need to get afected
+void update_price_and_wealth(std::vector<Trader>& traders, PriceContainer& p, double lambda){
+    int buys=0;
+    int sells=0;
+    for (int i=0; i<traders.size(); i++){
+        if(traders[i].last_desicion==1){
+            buys++;
+        }
+        if(traders[i].last_desicion==-1){
+            sells++;
+        }
+    }
+
+    double price=0;
+    double price_change=0;
+    price = p.current_price()* std::exp(lambda*(buys-sells)/traders.size());
+    price_change=price-p.current_price();
+    p.update_price(price);
+    
+    for (int i=0; i<traders.size(); i++){
+        traders[i].wealth=traders[i].wealth+traders[i].shares*price_change;
+    }    
+}
+
 void desired_action_test(){
     
     Trader a(1,Strategy::Fundamentalist);
@@ -163,9 +195,11 @@ void desired_action_test(){
         for (int j=0; j<3; j++){
             desired_action(traders[j], price, fair_value);
         }
+        update_price_and_wealth(traders, price, 0.8);
         std::cout<<"a: "<<traders[0].shares<<"\t"<<traders[0].wealth<<"\n"
                 <<"b: "<<traders[1].shares<<"\t"<<traders[1].wealth<<"\n"
-                <<"c: "<<traders[2].shares<<"\t"<<traders[2].wealth<<"\n";
+                <<"c: "<<traders[2].shares<<"\t"<<traders[2].wealth<<"\n"
+                <<"price: "<<price.current_price()<<"\n";
     }
 }
 
