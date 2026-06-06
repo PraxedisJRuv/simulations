@@ -203,6 +203,14 @@ void desired_action_test(){
     }
 }
 
+
+/*
+Excersises to do wer to test the effects on markets with different proportions regarding strategies
+in sizes greater than 200
+Note the top % wealths and the opposite, the % with less wealth after certain time and the strategies 
+proportion
+*/
+
 int main(){
     desired_action_test();
 

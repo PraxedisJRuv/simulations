@@ -1,5 +1,5 @@
-#include "pc_tests.hpp"
-#include "pc_visualization.hpp"
+#include "headers/pc_tests.hpp"
+#include "headers/pc_visualization.hpp"
 
 int main(){
     PriceContainer price({100});
