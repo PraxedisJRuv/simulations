@@ -1,4 +1,4 @@
-#include "SIR_tests.hpp"
+#include "headers/SIR_tests.hpp"
 
 int main(){
     test_age_groups();

@@ -52,36 +52,71 @@ Use the default build task in VS Code:
 
 ### Running Simulations
 
-Each simulation can be run individually:
+Build and run each simulation from its source folder. Example commands:
 ```bash
 # SIR model
-./epidemiological/SIR.exe
+g++.exe -fdiagnostics-color=always -g epidemiological/SIR/SIR_main.cpp epidemiological/SIR/SIR.cpp -I<C:/SFML-3.1.0/include> -L<C:/SFML-3.1.0/lib> -lsfml-graphics -lsfml-window -lsfml-system -o SIR.exe
+./SIR.exe
 
 # SEIR model with visualization
-./epidemiological/SEIR/SEIR.exe
+g++.exe -fdiagnostics-color=always -g epidemiological/SEIR/SEIR_main.cpp epidemiological/SEIR/SEIR.cpp -I<C:/SFML-3.1.0/include> -L<C:/SFML-3.1.0/lib> -lsfml-graphics -lsfml-window -lsfml-system -o SEIR.exe
+./SEIR.exe
 
 # Agent-Based Model
-./epidemiological/ABM.exe
+g++.exe -fdiagnostics-color=always -g epidemiological/ABM/ABM_main.cpp epidemiological/ABM/headers/ABM_functions.hpp -I<C:/SFML-3.1.0/include> -L<C:/SFML-3.1.0/lib> -lsfml-graphics -lsfml-window -lsfml-system -o ABM.exe
+./ABM.exe
 
-# Financial simulations
-./financial/price_container.exe
+# Financial price container simulation
+g++.exe -fdiagnostics-color=always -g financial/Price_Container/pc_main.cpp financial/Price_Container/price_container.cpp -o price_container.exe
+./price_container.exe
 ```
 
 ## Project Structure
 
 ```
 simulations/
-├── README.md              # Project documentation
-├── LICENSE                # License information
-├── test.cpp               # SFML test/demo application
-├── epidemiological/       # Disease modeling simulations
-│   ├── SIR.cpp           # SIR compartmental model
-│   ├── ABM.cpp           # Agent-Based Model
-│   └── SEIR/
-│       └── SEIR.cpp      # SEIR compartmental model
-└── financial/            # Financial market simulations
-    ├── price_container.cpp  # Price data analysis
-    └── interest.cpp         # Interest calculations
+├── README.md
+├── LICENSE
+├── epidemiological/
+│   ├── ABM/
+│   │   ├── ABM_main.cpp
+│   │   └── headers/
+│   │       ├── ABM_functions.hpp
+│   │       ├── ABM_structures.hpp
+│   │       ├── ABM_tests.hpp
+│   │       └── ABM_visualization.hpp
+│   ├── SEIR/
+│   │   ├── SEIR_main.cpp
+│   │   └── headers/
+│   │       ├── SEIR_functions.hpp
+│   │       ├── SEIR_structures.hpp
+│   │       ├── SEIR_tests.hpp
+│   │       └── SEIR_visualization.hpp
+│   └── SIR/
+│       ├── SIR_main.cpp
+│       └── headers/     
+│           ├── SIR_functions.hpp
+│           ├── SIR_structures.hpp
+│           └── SIR_tests.hpp
+└── financial/
+    ├── FABM/
+    │   ├── strategy/
+    │   │   ├── FAMB_strat_main.cpp
+    │   │   └── headers/
+    │   │       ├── FABM_strat_functions.hpp
+    │   │       ├── FABM_strat_strucutres.hpp
+    │   │       └── FABM_strat_tests.hpp
+    │   └── systemmic_risk/
+    │       └── FABM_sr.cpp
+    ├── interest/
+    │   └── interest.cpp
+    └── Price_Container/
+        ├── pc_main.cpp
+        └── headers/
+            ├── pc_functions.hpp
+            ├── pc_tests.hpp
+            ├── pc_visualization.hpp
+            └── price_container.hpp
 ```
 
 ## Methodology
