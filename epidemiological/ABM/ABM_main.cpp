@@ -3,7 +3,7 @@
 
 int main(){
     double delta=0.5;
-    int N = 200;
+    int N = 300;
     int T = 200;
     double p = 0.04;
     Parameters param(0.2, 0.3, 0.4);
