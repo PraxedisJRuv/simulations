@@ -10,8 +10,14 @@ const double delta_D = 0.40;
 const double threshold_high = 0.08;
 const double threshold_low  = 0.03;
 
-const double p=0.3;
+const double p=1;
 int N;
+
+struct BankParams {
+    double total_assets_min = 100.0, total_assets_max = 500.0;
+    double capital_ratio_min = 0.08, capital_ratio_max = 0.15;      
+    double max_exposure_fraction = 0.20; 
+};
 
 struct Banks{
     int id;
@@ -19,16 +25,16 @@ struct Banks{
     double total_assets;
     State current_state;
     
-    Banks(int id, State state){
+    Banks(int id, State state, const BankParams& p){
         this->id=id;
         this->current_state=state;
 
         std::mt19937 rng(std::random_device{}());
-        std::uniform_real_distribution<double>Z1(500,1500);
-        std::uniform_int_distribution<int>Z2(1,300);
+        std::uniform_real_distribution<double>Z1(p.capital_ratio_min,p.capital_ratio_max);
+        std::uniform_int_distribution<int>Z2(p.total_assets_min,p.total_assets_max);
 
-        equity=Z1(rng);
         total_assets=Z2(rng);
+        equity=total_assets*Z1(rng);
     }
 
     double capital_ratio()const{
@@ -37,8 +43,8 @@ struct Banks{
 
     void classify(){
         double cr=capital_ratio();
-        if(cr<=threshold_high) current_state=State::Stressed;
         if(cr<= threshold_low) current_state=State::Defaulted;
+        else if(cr<=threshold_high) current_state=State::Stressed;
         else current_state=State::Solvent;
     }
 };
@@ -80,14 +86,14 @@ std::vector<std::vector<int>> conctacts_list(const int N,
     return contacts;
 }
 
-std::vector<std::vector<double>> exposure_random(const int N, const std::vector<std::vector<int>>& contacts){
+std::vector<std::vector<double>> exposure_random(const int N, const std::vector<std::vector<int>>& contacts, std:: vector<Banks>& banks, const BankParams &p){
     std::vector<std::vector<double>> exposure_matrix(N);
-    std::uniform_real_distribution<double>Z_debt(0,500);
+    std::uniform_real_distribution<double>Z_debt(0.02,p.max_exposure_fraction);
     for (int i=0; i<N; i++){
         int total_contacts=contacts[i].size();
         for (int j=0; j<N; j++){
             std::mt19937 rng(std::random_device{}());
-            exposure_matrix[i].push_back(Z_debt(rng));
+            exposure_matrix[i].push_back(banks[i].equity*Z_debt(rng));
         }
     }
     return exposure_matrix;
@@ -129,24 +135,28 @@ void update_state(std::vector<Banks>& banks, std::vector<std::vector<double>>& e
     }
 }
 
+void trigger_default(std::vector<Banks>& banks, const int& id){
+    banks[id].equity=0.0;
+    banks[id].current_state=State::Defaulted;
+}
+
 int main(){
     int Amount=50;
-    int Periods=10;
-
+    int Periods=100;
+    BankParams param;
     std::vector<Banks> banks;
-    for (int i=0; i<Amount-3; i++){
-        banks.push_back(Banks(i, State::Solvent));
+    for (int i=0; i<Amount; i++){
+        banks.push_back(Banks(i, State::Solvent, param));
     }
-    for (int i=Amount-2; i<Amount; i++){
-        banks.push_back(Banks(i, State::Stressed));
-    }
-    banks.push_back(Banks(49,State::Defaulted));
-    banks[49].equity=0;
-
 
     std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<int> pick(0,Amount-1);
+    int trigger_id=pick(rng);
+
+    trigger_default(banks, trigger_id);
+
     std::vector<std::vector<int>> contacts=conctacts_list(Amount, p, rng);
-    std::vector<std::vector<double>> exposure=exposure_random(Amount, contacts);
+    std::vector<std::vector<double>> exposure=exposure_random(Amount, contacts, banks, param);
 
     for (int j=0; j<Periods; j++){
         std::cout<<"Period: "<<j<<"\t |"
