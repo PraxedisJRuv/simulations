@@ -10,7 +10,7 @@ const double delta_D = 0.40;
 const double threshold_high = 0.08;
 const double threshold_low  = 0.03;
 
-const double p=1;
+const double p=0.3;
 int N;
 
 struct Banks{
@@ -82,7 +82,7 @@ std::vector<std::vector<int>> conctacts_list(const int N,
 
 std::vector<std::vector<double>> exposure_random(const int N, const std::vector<std::vector<int>>& contacts){
     std::vector<std::vector<double>> exposure_matrix(N);
-    std::uniform_real_distribution<double>Z_debt(200000,5000000);
+    std::uniform_real_distribution<double>Z_debt(0,500);
     for (int i=0; i<N; i++){
         int total_contacts=contacts[i].size();
         for (int j=0; j<N; j++){
@@ -107,7 +107,7 @@ double compute_loss(int id, const std::vector<Banks>& banks,
             if (owed <= 0.0) continue;
 
             double recovery = 0.0;
-            switch (banks[id].current_state) {
+            switch (banks[i].current_state) {
                 case State::Solvent:   recovery = 1.0;     break;
                 case State::Stressed:  recovery = delta_S; break;
                 case State::Defaulted: recovery = delta_D; break;
@@ -148,11 +148,6 @@ int main(){
     std::vector<std::vector<int>> contacts=conctacts_list(Amount, p, rng);
     std::vector<std::vector<double>> exposure=exposure_random(Amount, contacts);
 
-    for (int i=0; i<Amount; i++){
-        std::cout<<banks[i].equity<<" ";
-    }
-    std::cout<<"\n";
-
     for (int j=0; j<Periods; j++){
         std::cout<<"Period: "<<j<<"\t |"
                  <<"Solvent: " <<count_state(banks,State::Solvent)<<"\t |"
@@ -160,14 +155,5 @@ int main(){
                  <<"Defaulted: "<<count_state(banks, State::Defaulted)<<"\n";
         update_state(banks, exposure, Amount);
     }
-
-     for (int i=0; i<Amount; i++){
-        std::cout<<banks[i].equity<<" ";
-    }
-    std::cout<<"\n";
-
-    std::cout<<banks[48].capital_ratio();
-    banks[48].classify();
-    std::cout<<count_state(banks,State::Defaulted);
     return 0;
 }
