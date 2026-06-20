@@ -25,7 +25,7 @@ struct Banks{
 
         std::mt19937 rng(std::random_device{}());
         std::uniform_real_distribution<double>Z1(500,1500);
-        std::uniform_int_distribution<int>Z2(0,300);
+        std::uniform_int_distribution<int>Z2(1,300);
 
         equity=Z1(rng);
         total_assets=Z2(rng);
@@ -37,8 +37,8 @@ struct Banks{
 
     void classify(){
         double cr=capital_ratio();
-        if(cr<= 0.03) current_state=State::Defaulted;
-        if(cr<=0.08) current_state=State::Stressed;
+        if(cr<=threshold_high) current_state=State::Stressed;
+        if(cr<= threshold_low) current_state=State::Defaulted;
         else current_state=State::Solvent;
     }
 };
@@ -168,5 +168,6 @@ int main(){
 
     std::cout<<banks[48].capital_ratio();
     banks[48].classify();
+    std::cout<<count_state(banks,State::Defaulted);
     return 0;
 }
