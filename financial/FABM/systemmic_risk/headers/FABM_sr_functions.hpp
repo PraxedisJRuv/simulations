@@ -83,4 +83,3 @@ void trigger_default(std::vector<Banks>& banks, std::mt19937& rng, const int& N,
         banks[id].current_state=State::Defaulted;
     }  
 }
-

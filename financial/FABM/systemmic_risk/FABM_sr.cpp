@@ -11,7 +11,6 @@ const double threshold_high = 0.08;
 const double threshold_low  = 0.03;
 
 const double p=0.3;
-int N;
 
 struct BankParams {
     double total_assets_min = 100.0, total_assets_max = 500.0;
@@ -98,7 +97,6 @@ std::vector<std::vector<double>> exposure_random(const int N, const std::vector<
     }
     return exposure_matrix;
 }
-//define contagion function
 
 double compute_loss(int id, const std::vector<Banks>& banks,
                      std::vector<std::vector<double>>& exposure, int const &N) {
