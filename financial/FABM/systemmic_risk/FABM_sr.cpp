@@ -10,7 +10,7 @@ const double delta_D = 0.40;
 const double threshold_high = 0.08;
 const double threshold_low  = 0.03;
 
-const double p=1;
+const double p=0.3;
 int N;
 
 struct BankParams {
@@ -91,7 +91,7 @@ std::vector<std::vector<double>> exposure_random(const int N, const std::vector<
     std::uniform_real_distribution<double>Z_debt(0.02,p.max_exposure_fraction);
     for (int i=0; i<N; i++){
         int total_contacts=contacts[i].size();
-        for (int j=0; j<N; j++){
+        for (int j=0; j<total_contacts; j++){
             std::mt19937 rng(std::random_device{}());
             exposure_matrix[i].push_back(banks[i].equity*Z_debt(rng));
         }
@@ -140,6 +140,13 @@ void trigger_default(std::vector<Banks>& banks, const int& id){
     banks[id].current_state=State::Defaulted;
 }
 
+void print_equity(std::vector<Banks>& banks, const int& N){
+    for (int i=0; i<N; i++){
+        std::cout<<banks[i].equity<<" ";
+    }
+    std::cout<<"\n";
+}
+
 int main(){
     int Amount=50;
     int Periods=100;
@@ -153,10 +160,10 @@ int main(){
     std::uniform_int_distribution<int> pick(0,Amount-1);
     int trigger_id=pick(rng);
 
-    trigger_default(banks, trigger_id);
-
     std::vector<std::vector<int>> contacts=conctacts_list(Amount, p, rng);
     std::vector<std::vector<double>> exposure=exposure_random(Amount, contacts, banks, param);
+
+    trigger_default(banks, trigger_id);
 
     for (int j=0; j<Periods; j++){
         std::cout<<"Period: "<<j<<"\t |"
