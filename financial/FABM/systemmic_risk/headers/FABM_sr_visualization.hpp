@@ -58,6 +58,13 @@ inline void runVisualization(std::vector<Banks>& banks,
     const float radius = std::min(WINDOW_WIDTH, WINDOW_HEIGHT) * 0.30f;
     const double pi = 3.14159265358979323846;
 
+    double maxExposure = 0.0;
+    for (const auto& row : exposure) {
+        for (const double value : row) {
+            maxExposure = std::max(maxExposure, value);
+        }
+    }
+
     for (int i = 0; i < N; ++i) {
         const float angle = static_cast<float>(2.0 * pi * i) / static_cast<float>(std::max(1, N));
         positions[i] = sf::Vector2f(centerX + std::cos(angle) * radius,
@@ -172,7 +179,8 @@ inline void runVisualization(std::vector<Banks>& banks,
         window.clear(sf::Color(245, 245, 240));
 
         for (int i = 0; i < N; ++i) {
-            for (int j : contacts[i]) {
+            for (size_t k = 0; k < contacts[i].size(); ++k) {
+                const int j = contacts[i][k];
                 if (j <= i) {
                     continue;
                 }
@@ -184,11 +192,17 @@ inline void runVisualization(std::vector<Banks>& banks,
                     continue;
                 }
 
+                const double exposureValue = (k < exposure[i].size()) ? exposure[i][k] : 0.0;
+                const double normalized = (maxExposure > 0.0) ? std::clamp(exposureValue / maxExposure, 0.0, 1.0) : 0.0;
+                const int red = static_cast<int>(140.0 + 70.0 * normalized);
+                const int green = static_cast<int>(60.0 + 25.0 * (1.0 - normalized));
+                const int blue = static_cast<int>(55.0 + 25.0 * (1.0 - normalized));
+
                 sf::Vertex line[2];
                 line[0].position = positions[i];
                 line[1].position = positions[j];
-                line[0].color = sf::Color(120, 120, 120, 120);
-                line[1].color = sf::Color(120, 120, 120, 120);
+                line[0].color = sf::Color(static_cast<std::uint8_t>(red), static_cast<std::uint8_t>(green), static_cast<std::uint8_t>(blue), 140);
+                line[1].color = sf::Color(static_cast<std::uint8_t>(red), static_cast<std::uint8_t>(green), static_cast<std::uint8_t>(blue), 140);
                 window.draw(line, 2u, sf::PrimitiveType::Lines);
             }
         }
