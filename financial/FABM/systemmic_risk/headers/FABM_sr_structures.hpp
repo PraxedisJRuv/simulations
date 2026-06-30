@@ -2,8 +2,10 @@
 #include <iostream>
 #include <random>
 
-enum class State{Solvent, Stressed, Defaulted};
-
+/*
+The following are parameters needes to be fixed for execution but that
+should be adjusted dependind on the conditions of the problem.
+*/
 const double delta_S = 0.85;
 const double delta_D = 0.40;
 const double threshold_high = 0.08;
@@ -16,6 +18,8 @@ struct BankParams {
     double capital_ratio_min = 0.08, capital_ratio_max = 0.15;      
     double max_exposure_fraction = 0.20; 
 };
+
+enum class State{Solvent, Stressed, Defaulted};
 
 struct Banks{
     int id;
