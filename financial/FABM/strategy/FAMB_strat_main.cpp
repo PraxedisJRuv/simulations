@@ -1,4 +1,5 @@
 #include "headers/FABM_strat_tests.hpp"
+#include "headers/FAMB_strat_visualization.hpp"
 
 int main(){
 
@@ -18,9 +19,10 @@ int main(){
 
     double fair_value=13.5;
     double lambda=0.1;
-    int T=100;
+    int T=500;
 
-    desired_action_test(t, price, fair_value, lambda, T);
+    StrategySimulationSummary summary = desired_action_test(t, price, fair_value, lambda, T);
+    fabm_strategy_vis::showStrategyDashboard(summary, fair_value);
 
     return 0;
 }
