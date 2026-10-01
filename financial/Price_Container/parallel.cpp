@@ -50,13 +50,13 @@ using Ms    = std::chrono::duration<double, std::milli>;
 
 int main() {
     // option parameters
-    const double S0    = 100.0;
-    const double K     = 100.0;
+    const double S0    = 100;
+    const double K     = 100;
     const double r     = 0.05;
     const double sigma = 0.20;
     const double T     = 1.0;
     const int    steps = 252;
-    const int    M     = 1'000'000;
+    const int    M     = 1000000;
 
     double bs_price = blackScholesCall(S0, K, r, sigma, T);
     std::cout << "Black-Scholes price: " << bs_price << "\n\n";
